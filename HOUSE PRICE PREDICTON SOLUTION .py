@@ -1,15 +1,3 @@
-################################################################
-# Ev Fiyat Tahmin Modeli
-################################################################
-
-
-# Görev
-# Elimizdeki veri seti üzerinden minimum hata ile ev fiyatlarını tahmin eden bir makine öğrenmesi modeli geliştiriniz ve kaggle yarışmasına tahminlerinizi yükleyiniz.
-# https://www.kaggle.com/competitions/house-prices-advanced-regression-techniques/overview/evaluation
-
-
-# 1. GEREKLILIKLER
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -41,20 +29,13 @@ pd.set_option('display.float_format', lambda x: '%.3f' % x)
 
 
 ######################################
-# GÖREV 1 : Veri setine EDA işlemlerini uygulayınız.
+#  EDA 
 ######################################
 
-# 1. Genel Resim
-# 2. Kategorik Değişken Analizi (Analysis of Categorical Variables)
-# 3. Sayısal Değişken Analizi (Analysis of Numerical Variables)
-# 4. Hedef Değişken Analizi (Analysis of Target Variable)
-# 5. Korelasyon Analizi (Analysis of Correlation)
 
 ################################################################
-# Adım 1: Train ve Test veri setlerini okutup birleştiriniz. Birleştirdiğiniz veri üzerinden ilerleyiniz.
-################################################################
+# Adım 1: Train ve Test set
 
-# train ve test setlerinin bir araya getirilmesi.
 train = pd.read_csv("datasets/train.csv")
 test = pd.read_csv("datasets/test.csv")
 df = train.append(test, ignore_index=False).reset_index()
@@ -63,7 +44,7 @@ df = df.drop("index", axis=1)
 
 
 ######################################
-# 1. Genel Resim
+# 1. EDA
 ######################################
 
 def check_df(dataframe):
@@ -86,19 +67,11 @@ check_df(df)
 
 
 ##################################
-# NUMERİK VE KATEGORİK DEĞİŞKENLERİN YAKALANMASI
+# NUMERIC AN CATEGORİCAL VALUABLES 
 ##################################
 
 def grab_col_names(dataframe, cat_th=10, car_th=20):
-    """
-    grab_col_names for given dataframe
-
-    :param dataframe:
-    :param cat_th:
-    :param car_th:
-    :return:
-    """
-
+   
     cat_cols = [col for col in dataframe.columns if dataframe[col].dtypes == "O"]
 
     num_but_cat = [col for col in dataframe.columns if dataframe[col].nunique() < cat_th and
@@ -120,10 +93,6 @@ def grab_col_names(dataframe, cat_th=10, car_th=20):
     print(f'cat_but_car: {len(cat_but_car)}')
     print(f'num_but_cat: {len(num_but_cat)}')
 
-    # cat_cols + num_cols + cat_but_car = değişken sayısı.
-    # num_but_cat cat_cols'un içerisinde zaten.
-    # dolayısıyla tüm şu 3 liste ile tüm değişkenler seçilmiş olacaktır: cat_cols + num_cols + cat_but_car
-    # num_but_cat sadece raporlama için verilmiştir.
 
     return cat_cols, cat_but_car, num_cols
 
@@ -131,7 +100,7 @@ cat_cols, cat_but_car, num_cols = grab_col_names(df)
 
 
 ######################################
-# 2. Kategorik Değişken Analizi (Analysis of Categorical Variables)
+# 2. Analysis of Categorical Variables
 ######################################
 
 def cat_summary(dataframe, col_name, plot=False):
@@ -149,7 +118,7 @@ for col in cat_cols:
 
 
 ######################################
-# 3. Sayısal Değişken Analizi (Analysis of Numerical Variables)
+# 3.Analysis of Numerical Variables
 ######################################
 
 def num_summary(dataframe, numerical_col, plot=False):
@@ -171,7 +140,7 @@ for col in num_cols:
 
 
 ######################################
-# 4. Hedef Değişken Analizi (Analysis of Target Variable)
+# 4.Analysis of Target Variable
 ######################################
 
 def target_summary_with_cat(dataframe, target, categorical_col):
@@ -182,22 +151,22 @@ for col in cat_cols:
     target_summary_with_cat(df, "SalePrice", col)
 
 
-# Bağımlı değişkenin incelenmesi
+# Target Variable
 df["SalePrice"].hist(bins=100)
 plt.show(block=True)
 
-# Bağımlı değişkenin logaritmasının incelenmesi
+# Examining the logarithm of the dependent variable
 np.log1p(df['SalePrice']).hist(bins=50)
 plt.show(block=True)
 
 ######################################
-# 5. Korelasyon Analizi (Analysis of Correlation)
+# 5. Analysis of Correlation
 ######################################
 
 corr = df[num_cols].corr()
 corr
 
-# Korelasyonların gösterilmesi
+# sgowing the correlations
 sns.set(rc={'figure.figsize': (25, 15)})
 sns.heatmap(corr, cmap="RdBu",annot=True)
 plt.show(block=True)
@@ -226,10 +195,9 @@ high_correlated_cols(df, plot=False)
 ######################################
 
 ######################################
-# Aykırı Değer Analizi
+# Outliers
 ######################################
 
-# Aykırı değerlerin baskılanması
 def outlier_thresholds(dataframe, variable, low_quantile=0.10, up_quantile=0.90):
     quantile_one = dataframe[variable].quantile(low_quantile)
     quantile_three = dataframe[variable].quantile(up_quantile)
@@ -238,7 +206,7 @@ def outlier_thresholds(dataframe, variable, low_quantile=0.10, up_quantile=0.90)
     low_limit = quantile_one - 1.5 * interquantile_range
     return low_limit, up_limit
 
-# Aykırı değer kontrolü
+
 def check_outlier(dataframe, col_name):
     low_limit, up_limit = outlier_thresholds(dataframe, col_name)
     if dataframe[(dataframe[col_name] > up_limit) | (dataframe[col_name] < low_limit)].any(axis=None):
@@ -252,7 +220,7 @@ for col in num_cols:
       print(col, check_outlier(df, col))
 
 
-# Aykırı değerlerin baskılanması
+
 def replace_with_thresholds(dataframe, variable):
     low_limit, up_limit = outlier_thresholds(dataframe, variable)
     dataframe.loc[(dataframe[variable] < low_limit), variable] = low_limit
@@ -266,7 +234,7 @@ for col in num_cols:
 
 
 ######################################
-# Eksik Değer Analizi
+# Missing Values
 ######################################
 
 
@@ -291,11 +259,11 @@ df["Alley"].value_counts()
 df["BsmtQual"].value_counts()
 
 
-# Bazı değişkenlerdeki boş değerler evin o özelliğe sahip olmadığını ifade etmektedir
+
 no_cols = ["Alley","BsmtQual","BsmtCond","BsmtExposure","BsmtFinType1","BsmtFinType2","FireplaceQu",
            "GarageType","GarageFinish","GarageQual","GarageCond","PoolQC","Fence","MiscFeature"]
 
-# Kolonlardaki boşlukların "No" ifadesi ile doldurulması
+
 for col in no_cols:
     df[col].fillna("No",inplace=True)
 
@@ -303,23 +271,21 @@ missing_values_table(df)
 
 
 
-# Bu fonsksiyon eksik değerlerin median veya mean ile doldurulmasını sağlar
+
 
 def quick_missing_imp(data, num_method="median", cat_length=20, target="SalePrice"):
-    variables_with_na = [col for col in data.columns if data[col].isnull().sum() > 0]  # Eksik değere sahip olan değişkenler listelenir
+    variables_with_na = [col for col in data.columns if data[col].isnull().sum() > 0]  
 
     temp_target = data[target]
 
     print("# BEFORE")
-    print(data[variables_with_na].isnull().sum(), "\n\n")  # Uygulama öncesi değişkenlerin eksik değerlerinin sayısı
+    print(data[variables_with_na].isnull().sum(), "\n\n")  
 
-    # değişken object ve sınıf sayısı cat_lengthe eşit veya altındaysa boş değerleri mode ile doldur
     data = data.apply(lambda x: x.fillna(x.mode()[0]) if (x.dtype == "O" and len(x.unique()) <= cat_length) else x, axis=0)
 
-    # num_method mean ise tipi object olmayan değişkenlerin boş değerleri ortalama ile dolduruluyor
     if num_method == "mean":
         data = data.apply(lambda x: x.fillna(x.mean()) if x.dtype != "O" else x, axis=0)
-    # num_method median ise tipi object olmayan değişkenlerin boş değerleri ortalama ile dolduruluyor
+
     elif num_method == "median":
         data = data.apply(lambda x: x.fillna(x.median()) if x.dtype != "O" else x, axis=0)
 
@@ -336,10 +302,9 @@ df = quick_missing_imp(df, num_method="median", cat_length=17)
 
 
 ######################################
-# Rare analizi yapınız ve rare encoder uygulayınız.
+# Rare analysis
 ######################################
 
-# Kategorik kolonların dağılımının incelenmesi
 
 def rare_analyser(dataframe, target, cat_cols):
     for col in cat_cols:
@@ -351,7 +316,7 @@ def rare_analyser(dataframe, target, cat_cols):
 rare_analyser(df, "SalePrice", cat_cols)
 
 
-# Nadir sınıfların tespit edilmesi
+
 def rare_encoder(dataframe, rare_perc):
     temp_df = dataframe.copy()
 
@@ -370,7 +335,7 @@ rare_encoder(df,0.01)
 
 
 ######################################
-# yeni değişkenler oluşturunuz ve oluşturduğunuz yeni değişkenlerin başına 'NEW' ekleyiniz.
+# new values
 ######################################
 
 
@@ -430,13 +395,13 @@ df["NEW_GarageSold"] = df.YrSold - df.GarageYrBlt # 48
 
 drop_list = ["Street", "Alley", "LandContour", "Utilities", "LandSlope","Heating", "PoolQC", "MiscFeature","Neighborhood"]
 
-# drop_list'teki değişkenlerin düşürülmesi
+
 df.drop(drop_list, axis=1, inplace=True)
 
 
 
 ##################
-# Label Encoding & One-Hot Encoding işlemlerini uygulayınız.
+# Label Encoding & One-Hot Encoding 
 ##################
 
 cat_cols, cat_but_car, num_cols = grab_col_names(df)
@@ -462,32 +427,19 @@ df.shape
 ##################################
 # MODELLEME
 ##################################
-# x=test
-# #train
-###############################################################xxxxxxxxxxxxxxxxxxx
-
-#############################################/////////////
-
-
-#xxxxxxxxxxxxxxxxxxxx
-
-
-
-
-
 
 ##################################
-# GÖREV 3: Model kurma
+# GÖREV 3: Model
 ##################################
 
-#  Train ve Test verisini ayırınız. (SalePrice değişkeni boş olan değerler test verisidir.)
+#  Train ve Test data
 train_df = df[df['SalePrice'].notnull()]
 test_df = df[df['SalePrice'].isnull()]
 
-y = train_df['SalePrice'] # np.log1p(df['SalePrice'])
+y = train_df['SalePrice'] 
 X = train_df.drop(["Id", "SalePrice"], axis=1)
 
-# Train verisi ile model kurup, model başarısını değerlendiriniz.
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=17)
 
 models = [('LR', LinearRegression()),
@@ -517,11 +469,11 @@ df['SalePrice'].std()
 
 
 ##################
-# BONUS : Log dönüşümü yaparak model kurunuz ve rmse sonuçlarını gözlemleyiniz.
-# Not: Log'un tersini (inverse) almayı unutmayınız.
+# BONUS : Log transformation
+# Not: Don forger inverse after that 
 ##################
 
-# Log dönüşümünün gerçekleştirilmesi
+# Log transformation
 
 
 train_df = df[df['SalePrice'].notnull()]
@@ -530,11 +482,11 @@ test_df = df[df['SalePrice'].isnull()]
 y = np.log1p(train_df['SalePrice'])
 X = train_df.drop(["Id", "SalePrice"], axis=1)
 
-# Verinin eğitim ve tet verisi olarak bölünmesi
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=17)
 
 
-# lgbm_tuned = LGBMRegressor(**lgbm_gs_best.best_params_).fit(X_train, y_train)
+
 
 lgbm = LGBMRegressor().fit(X_train, y_train)
 y_pred = lgbm.predict(X_test)
@@ -542,7 +494,7 @@ y_pred = lgbm.predict(X_test)
 
 
 y_pred
-# Yapılan LOG dönüşümünün tersinin (inverse'nin) alınması
+
 new_y = np.expm1(y_pred)
 new_y
 new_y_test = np.expm1(y_test)
@@ -560,7 +512,7 @@ np.sqrt(mean_squared_error(new_y_test, new_y))
 
 
 ##################
-# hiperparametre optimizasyonlarını gerçekleştiriniz.
+# hiperparametre optimization
 ##################
 
 
@@ -588,10 +540,6 @@ rmse = np.mean(np.sqrt(-cross_val_score(final_model, X, y, cv=5, scoring="neg_me
 print(rmse)
 
 
-################################################################
-# Değişkenlerin önem düzeyini belirten feature_importance fonksiyonunu kullanarak özelliklerin sıralamasını çizdiriniz.
-################################################################
-
 # feature importance
 def plot_importance(model, features, num=len(X), save=False):
 
@@ -613,11 +561,6 @@ plot_importance(model, X, 20)
 
 
 
-
-########################################
-# test dataframeindeki boş olan salePrice değişkenlerini tahminleyiniz ve
-# Kaggle sayfasına submit etmeye uygun halde bir dataframe oluşturunuz. (Id, SalePrice)
-########################################
 model = LGBMRegressor()
 model.fit(X, y)
 predictions = model.predict(test_df.drop(["Id","SalePrice"], axis=1))
